@@ -4,6 +4,7 @@ import math
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib.ticker import MultipleLocator
 
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -15,26 +16,27 @@ from scipy.linalg import eig as eigscipy
 import time
 start_time = time.time()
 
+label_size = 17
+#matplotlib.rcParams['xtick.labelsize'] = label_size 
+#matplotlib.rcParams['ytick.labelsize'] = label_size 
+matplotlib.rcParams.update({'font.size': 16})
+#matplotlib.rcParams['xtick.major.pad']='0'
 
-global T,Eu,Ed,h,hz, a, b ,dchi,Tp,omega,muL,muR
-#T=5e-3
-#Ed=3.498
-#Eu=3.441
+global T,Eu,Ed,h,hz,wL,wR, a, b ,dchi,Tp,omega
 
-T=10e-3
-#Ed=3.270
-Eu=3.149
-Ed=Eu
-muL=Eu
-muR=Eu
-
+shift=0.0
+scale=1e0
+T=10e-3 # temperature
+Ed=scale*(3.270-3.149+shift)
+Eu=scale*(0.0+shift)
 h=0e-3
 hz=0
 
-dchi=1e-6+0j
+dchi=8e-5+0j
+#print(dchi)
 
-omega=1e6
-Tp=2*math.pi/omega
+omega=1e9  # frequency
+Tp=2*math.pi/omega   # period
 
 #wL=1e9
 #wR=1e9
@@ -51,19 +53,18 @@ def eigofH(hz,h):
 a=eigofH(hz,h)[0]
 b=eigofH(hz,h)[1]
 
-print("a=",a,"b=",b)
 
 
 
 
 
-def geometric(wLC,wRC,amp):
+def geometric(muLC,muRC,amp):
 	def fLinU(muL,muR):
 	    f=1.0/(1.0+np.exp((Eu+hz/2.0-muL)/T))
 	    return f
 	
 	def fLoutU(muL,muR):
-	    f=1.0-1.0/(1.0+np.exp((Eu+hz/2.0-muL)/T))
+	    f=1.0/(1.0+np.exp(-(Eu+hz/2.0-muL)/T))
 	    return f
 	
 	def fRinU(muL,muR):
@@ -71,7 +72,7 @@ def geometric(wLC,wRC,amp):
 	    return f
 	
 	def fRoutU(muL,muR):
-	    f=1.0-1.0/(1.0+np.exp((Eu+hz/2.0-muR)/T))
+	    f=1.0/(1.0+np.exp(-(Eu+hz/2.0-muR)/T))
 	    return f
 	
 	def fLinD(muL,muR):
@@ -79,7 +80,7 @@ def geometric(wLC,wRC,amp):
 	    return f
 	
 	def fLoutD(muL,muR):
-	    f=1.0-1.0/(1.0+np.exp((Ed-hz/2.0-muL)/T))
+	    f=1.0/(1.0+np.exp(-(Ed-hz/2.0-muL)/T))
 	    return f
 	
 	def fRinD(muL,muR):
@@ -87,14 +88,12 @@ def geometric(wLC,wRC,amp):
 	    return f
 	
 	def fRoutD(muL,muR):
-	    f=1.0-1.0/(1.0+np.exp((Ed-hz/2.0-muR)/T))
+	    f=1.0/(1.0+np.exp(-(Ed-hz/2.0-muR)/T))
 	    return f
 	
 	    
-	def Hamilt(wL,wR,chip,chim):
-	    H=np.zeros((3,3),dtype=complex)
-
-
+	def Hamilt(muL,muR,chip,chim):
+	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
 	
 	
 
@@ -117,8 +116,9 @@ def geometric(wLC,wRC,amp):
 	    e_chip2=np.exp(-1j*chip)
 	    e_chim=np.exp(1j*chim)
 	    e_chim2=np.exp(-1j*chim)
-	#    e_chi=1.0+1j*chi
-	#    e_chi2=1.0-1j*chi
+
+
+
 	    H[0,0]= -Wp0-Wm0
 	    H[0,1]=W0pL+W0pR*e_chip
 	    H[0,2]=W0mL+W0mR*e_chim
@@ -130,31 +130,71 @@ def geometric(wLC,wRC,amp):
 	    H[2,2]= -W0m
 	    H=-H
 	    
-	#    print('0pL',W0pL)
-	#    print('p0L',Wp0L)
-	#    print('0pR',W0pR)
-	#    print('p0R',Wp0R)
-	#    print(H[0,1])
-	#    print(H[1,0])
 	    return H
 	    
-
+	def fLinUdiff(muL,muR):
+	    a=np.exp((Eu+hz/2.0-muL)/T)
+#	    f=a/(1.0+a)**2.0/T
+	    f=1.0/(1.0/a+2+a)/T
+	    return f
+	
+	def fLoutUdiff(muL,muR):
+	    a=np.exp((Eu+hz/2.0-muL)/T)
+#	    f=-a/(1.0+a)**2.0/T
+	    f=-1.0/(1.0/a+2+a)/T
+	    return f
+	
+	def fRinUdiff(muL,muR):
+	    a=np.exp((Eu+hz/2.0-muR)/T)
+#	    f=a/(1.0+a)**2.0/T
+	    f=1.0/(1.0/a+2+a)/T
+	    return f
+	
+	def fRoutUdiff(muL,muR):
+	    a=np.exp((Eu+hz/2.0-muR)/T)
+#	    f=-a/(1.0+a)**2.0/T
+	    f=-1.0/(1.0/a+2+a)/T
+	    return f
+	
+	def fLinDdiff(muL,muR):
+	    a=np.exp((Ed-hz/2.0-muL)/T)
+#	    f=a/(1.0+a)**2.0/T
+	    f=1.0/(1.0/a+2+a)/T
+	    return f
+	
+	def fLoutDdiff(muL,muR):
+	    a=np.exp((Ed-hz/2.0-muL)/T)
+#	    f=-a/(1.0+a)**2.0/T
+	    f=-1.0/(1.0/a+2+a)/T
+	    return f
+	
+	def fRinDdiff(muL,muR):
+	    a=np.exp((Ed-hz/2.0-muR)/T)
+#	    f=a/(1.0+a)**2.0/T
+	    f=1.0/(1.0/a+2+a)/T
+	    return f
+	
+	def fRoutDdiff(muL,muR):
+	    a=np.exp((Ed-hz/2.0-muR)/T)
+#	    f=-a/(1.0+a)**2.0/T
+	    f=-1.0/(1.0/a+2+a)/T
+	    return f
 	
 	    
-	def HdiffL(wL,wR,chip,chim):
-	    H=np.zeros((3,3),dtype=complex)
+	def HdiffL(muL,muR,chip,chim):
+	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
 	
 	    a=eigofH(hz,h)[0]
 	    b=eigofH(hz,h)[1]
 	
-	    Wp0L=(fLinU(muL,muR)*a**2+fLinD(muL,muR)*b**2)
+	    Wp0L=wL*(fLinUdiff(muL,muR)*a**2+fLinDdiff(muL,muR)*b**2)
 	    Wp0R=0
-	    Wm0L=(fLinU(muL,muR)*b**2+fLinD(muL,muR)*a**2)
+	    Wm0L=wL*(fLinUdiff(muL,muR)*b**2+fLinDdiff(muL,muR)*a**2)
 	    Wm0R=0
 	    
-	    W0pL=(fLoutU(muL,muR)*a**2+fLoutD(muL,muR)*b**2)
+	    W0pL=wL*(fLoutUdiff(muL,muR)*a**2+fLoutDdiff(muL,muR)*b**2)
 	    W0pR=0
-	    W0mL=(fLoutU(muL,muR)*b**2+fLoutD(muL,muR)*a**2)
+	    W0mL=wL*(fLoutUdiff(muL,muR)*b**2+fLoutDdiff(muL,muR)*a**2)
 	    W0mR=0
 	   
 	    W0p=W0pL+W0pR
@@ -179,29 +219,29 @@ def geometric(wLC,wRC,amp):
 	    H=-H
 	    return H
 	
-	def HdiffR(wL,wR,chip,chim):
-	    H=np.zeros((3,3),dtype=complex)
+	def HdiffR(muL,muR,chip,chim):
+	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
 	
 	    a=eigofH(hz,h)[0]
 	    b=eigofH(hz,h)[1]
 	
 	    Wp0L=0
-	    Wp0R=(fRinU(muL,muR)*a**2+fRinD(muL,muR)*b**2)
-	    Wp0Ru=(fRinU(muL,muR)*a**2)
-	    Wp0Rd=(fRinD(muL,muR)*b**2)
+	    Wp0R=wR*(fRinUdiff(muL,muR)*a**2+fRinDdiff(muL,muR)*b**2)
+	    Wp0Ru=wR*(fRinUdiff(muL,muR)*a**2)
+	    Wp0Rd=wR*(fRinDdiff(muL,muR)*b**2)
 	    Wm0L=0
-	    Wm0R=(fRinU(muL,muR)*b**2+fRinD(muL,muR)*a**2)
-	    Wm0Ru=(fRinU(muL,muR)*b**2)
-	    Wm0Rd=(fRinD(muL,muR)*a**2)
+	    Wm0R=wR*(fRinUdiff(muL,muR)*b**2+fRinDdiff(muL,muR)*a**2)
+	    Wm0Ru=wR*(fRinUdiff(muL,muR)*b**2)
+	    Wm0Rd=wR*(fRinDdiff(muL,muR)*a**2)
 	    
 	    W0pL=0
-	    W0pR=(fRoutU(muL,muR)*a**2+fRoutD(muL,muR)*b**2)
-	    W0pRu=(fRoutU(muL,muR)*a**2)
-	    W0pRd=(fRoutD(muL,muR)*b**2)
+	    W0pR=wR*(fRoutUdiff(muL,muR)*a**2+fRoutDdiff(muL,muR)*b**2)
+	    W0pRu=wR*(fRoutUdiff(muL,muR)*a**2)
+	    W0pRd=wR*(fRoutDdiff(muL,muR)*b**2)
 	    W0mL=0
-	    W0mR=(fRoutU(muL,muR)*b**2+fRoutD(muL,muR)*a**2)
-	    W0mRu=(fRoutU(muL,muR)*b**2)
-	    W0mRd=(fRoutD(muL,muR)*a**2)
+	    W0mR=wR*(fRoutUdiff(muL,muR)*b**2+fRoutDdiff(muL,muR)*a**2)
+	    W0mRu=wR*(fRoutUdiff(muL,muR)*b**2)
+	    W0mRd=wR*(fRoutDdiff(muL,muR)*a**2)
 	   
 	    W0p=W0pL+W0pR
 	    W0m=W0mL+W0mR
@@ -225,13 +265,13 @@ def geometric(wLC,wRC,amp):
 	    H=-H
 	    return H
 	
-	def F(wL,wR,chip,chim):
+	def F(muL,muR,chip,chim):
 	#    H=Hamilt(t,chi)
 	#    Hdagger=np.conj(H.transpose())
 	#    print(H)
 	#    print(Hdagger)
 	
-	    H=Hamilt(wL,wR,chip,chim)
+	    H=Hamilt(muL,muR,chip,chim)
 	    A=eigscipy(H,left=True)
 	    imin=A[0].argsort()[0]
 	    imed=A[0].argsort()[1]
@@ -264,26 +304,26 @@ def geometric(wLC,wRC,amp):
 	#    print('left from scipy',eigscipy(H1L,left=True))
 	#    print('right',LA.eig(H1L)[1].transpose()[0])
 	    
-	    a=np.matmul(phi0L,HdiffL(wL,wR,chip,chim))
+	    a=np.matmul(phi0L,HdiffL(muL,muR,chip,chim))
 	    b1L=np.matmul(a,phi1R)
-	    a=np.matmul(phi1L,HdiffR(wL,wR,chip,chim))
+	    a=np.matmul(phi1L,HdiffR(muL,muR,chip,chim))
 	    c1L=np.matmul(a,phi0R)
 	    
-	    a=np.matmul(phi0L,HdiffR(wL,wR,chip,chim))
+	    a=np.matmul(phi0L,HdiffR(muL,muR,chip,chim))
 	    b1R=np.matmul(a,phi1R)
-	    a=np.matmul(phi1L,HdiffL(wL,wR,chip,chim))
+	    a=np.matmul(phi1L,HdiffL(muL,muR,chip,chim))
 	    c1R=np.matmul(a,phi0R)
 	    
 	    element1=(b1L*c1L-b1R*c1R)/((eig0-eig1))**2.0
 	    
-	    a=np.matmul(phi0L,HdiffL(wL,wR,chip,chim))
+	    a=np.matmul(phi0L,HdiffL(muL,muR,chip,chim))
 	    b2L=np.matmul(a,phi2R)
-	    a=np.matmul(phi2L,HdiffR(wL,wR,chip,chim))
+	    a=np.matmul(phi2L,HdiffR(muL,muR,chip,chim))
 	    c2L=np.matmul(a,phi0R)
 	    
-	    a=np.matmul(phi0L,HdiffR(wL,wR,chip,chim))
+	    a=np.matmul(phi0L,HdiffR(muL,muR,chip,chim))
 	    b2R=np.matmul(a,phi2R)
-	    a=np.matmul(phi2L,HdiffL(wL,wR,chip,chim))
+	    a=np.matmul(phi2L,HdiffL(muL,muR,chip,chim))
 	    c2R=np.matmul(a,phi0R)
 	    
 	    element2=(b2L*c2L-b2R*c2R)/((eig0-eig2))**2.0
@@ -291,16 +331,28 @@ def geometric(wLC,wRC,amp):
 	    intg=element1+element2
 	    return intg
 	
-	def BerryCurvature(wL,wR):
-	#    BC=(-1j)*(integrand(muL,muR,dchi/2)-integrand(muL,muR,-dchi/2))/(dchi)
-	    #BC=(-1j)*2*F(muL,muR,dchi/2)/(dchi)
-	    temp1=F(wL,wR,dchi/2,0)
-	    temp2=F(wL,wR,0,dchi/2)
+	def BerryCurvature(muL,muR):
+
+#	    temp1=F(muL,muR,dchi/2,0)
+#	    temp2=F(muL,muR,0,dchi/2)
+#
+#	    
+#	    BC_U=2*(temp1.imag)/(dchi)
+#	    BC_D=2*(temp2.imag)/(dchi)
+	    
+	    temp1=8.0*F(muL,muR,dchi/2.0,0)-F(muL,muR,dchi,0)
+	    temp2=8.0*F(muL,muR,0,dchi/2.0)-F(muL,muR,0,dchi)
+	    BC_U=(temp1.imag)/(3.0*dchi)
+	    BC_D=(temp2.imag)/(3.0*dchi)
+
+#	    temp1=8*F(muL,muR,dchi/2,0)-8*F(muL,muR,-dchi/2,0)-F(muL,muR,dchi,0)+F(muL,muR,-dchi,0)
+#	    temp2=8*F(muL,muR,0,dchi/2)-8*F(muL,muR,0,-dchi/2)-F(muL,muR,0,dchi)+F(muL,muR,0,-dchi)
 
 	    
-	    BC_U=2*(temp1.imag)/(dchi)
-	    BC_D=2*(temp2.imag)/(dchi)
-	#    print("BC",BC_C)
+#	    BC_U=(temp1.imag)/(6*dchi)
+#	    BC_D=(temp2.imag)/(6*dchi)
+
+
 	    return [BC_U,BC_D]
 	
 
@@ -318,7 +370,7 @@ def geometric(wLC,wRC,amp):
 	    xlist = np.linspace(muLC-amp, muLC+amp, Ngrid,endpoint=True)
 	    ylist = np.linspace(muRC-amp, muRC+amp, Ngrid,endpoint=True)
 	    X, Y = np.meshgrid(xlist, ylist)
-	    #Z=np.zeros((Ngrid,Ngrid),dtype=complex)
+	    #Z=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
 	    for i in range(Ngrid):
 	        for j in range(Ngrid):
 	            if np.sqrt((X[0][i]-muLC)**2.0+(Y[j][0]-muRC)**2.0)<amp:
@@ -333,8 +385,8 @@ def geometric(wLC,wRC,amp):
 	def lineInt():
 			Ngrid=2000
 			
-			phiL=np.zeros((Ngrid,3),dtype=complex)
-			phiR=np.zeros((Ngrid,3),dtype=complex)
+			phiL=np.zeros((Ngrid,3),dtype=np.dtype(np.complex128))
+			phiR=np.zeros((Ngrid,3),dtype=np.dtype(np.complex128))
 			chip=dchi
 			chim=0.0
 			for i in range(Ngrid):
@@ -374,8 +426,8 @@ def geometric(wLC,wRC,amp):
 			int1=int1*np.matmul(phiL[Ngrid-1],phiR[0])
 			int1=np.log(int1).imag/dchi*omega
 			
-			phiL=np.zeros((Ngrid,3),dtype=complex)
-			phiR=np.zeros((Ngrid,3),dtype=complex)
+			phiL=np.zeros((Ngrid,3),dtype=np.dtype(np.complex128))
+			phiR=np.zeros((Ngrid,3),dtype=np.dtype(np.complex128))
 			chip=0.0
 			chim=dchi
 			for i in range(Ngrid):
@@ -423,71 +475,78 @@ def geometric(wLC,wRC,amp):
 		
 
 	def fmt(x, pos):
-  		a, b = '{:.2e}'.format(x).split('e')
-  		b = int(b)
-  		return r'${} \times 10^{{{}}}$'.format(a, b)
+#  		a, b = '{:.2e}'.format(x).split('e')
+#  		b = int(b)
+#  		return r'${} \times 10^{{{}}}$'.format(a, b)
 			return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')
-   
+    
 	def BC_plot1():
-	    Ngrid=11
-	    xlist = np.linspace(1, 10, Ngrid,endpoint=True)
-	    ylist = np.linspace(1, 10, Ngrid,endpoint=True)
+	    Ngrid=41 #41
+	    xlist = np.linspace(Eu-50e-3, Ed+50e-3, Ngrid,endpoint=True)
+	    ylist = np.linspace(Eu-50e-3, Ed+50e-3, Ngrid,endpoint=True)
 	    X, Y = np.meshgrid(xlist, ylist)
-	    BC_C=np.zeros((Ngrid,Ngrid),dtype=complex)
-	    BC_S=np.zeros((Ngrid,Ngrid),dtype=complex)
-	    BC_U=np.zeros((Ngrid,Ngrid),dtype=complex)
-	    BC_D=np.zeros((Ngrid,Ngrid),dtype=complex)
+	    BC_C=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	    BC_S=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	    BC_U=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	    BC_D=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
 	    for i in range(Ngrid):
 	        for j in range(Ngrid):
 	            temp=BerryCurvature(X[0][i],Y[j][0])
-	            BC_C[i,j]=(temp[0]+temp[1])
-	            BC_S[i,j]=(temp[0]-temp[1])
-	            BC_U[i,j]=(temp[0])
-	            BC_D[i,j]=(temp[1])
+#	            BC_C[i,j]=(temp[0]+temp[1])
+#	            BC_S[i,j]=(temp[0]-temp[1])
+#	            BC_U[i,j]=(temp[0])
+#	            BC_D[i,j]=(temp[1])
 
-#### attention, the order of index
+##### attention, the order of index
 
 	            BC_C[j,i]=(temp[0]+temp[1])
 	            BC_S[j,i]=(temp[0]-temp[1])
 	            BC_U[j,i]=(temp[0])
+#	            if abs(BC_U[j,i])<8e-11:
+#	            	BC_U[j,i]=0
+	            if i>j:
+	            	BC_U[j,i]=(BC_U[j,i]+BC_U[i,j])/2.0
+	            	BC_U[i,j]=BC_U[j,i]
 	            BC_D[j,i]=(temp[1])
-	            #print("pos=",X[0][i],Y[j][0])
+#	            if BC_U[j,i]>9e-10:
+#	            	print(j,i,X[0][j],Y[i][0],BC_U[j,i])
 	            #print("polarization=",BC_D[i,j]/BC_U[i,j])
 	
+	    print(BC_U[10,30])
 
 	    fig=plt.figure()
 
-	    p1=fig.add_subplot(221)
-	    cp = p1.contourf(X, Y, BC_C,128)
-	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	    plt.title('(a) Charge')
-	    plt.xlabel('$\mu_L$ (eV)')
-	    plt.ylabel('$\mu_R$ (eV)')
-	    plt.gca().set_aspect('equal', adjustable='box')
-	    
-	    p2=fig.add_subplot(222)
-	    cp = p2.contourf(X, Y, BC_S,128)
-	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	    plt.title('(b) Spin')
-	    plt.xlabel('$\mu_L$ (eV)')
-	    plt.ylabel('$\mu_R$ (eV)')
-	    plt.gca().set_aspect('equal', adjustable='box')
+#	    p1=fig.add_subplot(221)
+#	    cp = p1.contourf(X, Y, BC_C,128)
+#	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
+#	    plt.title('(a) Charge')
+#	    plt.xlabel('$\mu_L$ (eV)')
+#	    plt.ylabel('$\mu_R$ (eV)')
+#	    plt.gca().set_aspect('equal', adjustable='box')
+#	    
+#	    p2=fig.add_subplot(222)
+#	    cp = p2.contourf(X, Y, BC_S,128)
+#	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
+#	    plt.title('(b) Spin')
+#	    plt.xlabel('$\mu_L$ (eV)')
+#	    plt.ylabel('$\mu_R$ (eV)')
+#	    plt.gca().set_aspect('equal', adjustable='box')
 
-	    p3=fig.add_subplot(223)
-	    cp = p3.contourf(X, Y, BC_U,128)
+	    p3=fig.add_subplot(121)
+	    cp = p3.contourf(X*1e3, Y*1e3, BC_U,16)
 	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	    plt.title('(c) Up')
-	    plt.xlabel('$\mu_L$ (eV)')
-	    plt.ylabel('$\mu_R$ (eV)')
-	    plt.gca().set_aspect('equal', adjustable='box')
+	    plt.title('(a) Up')
+	    plt.xlabel('$\mu_L$ (meV)',fontsize=19)
+	    plt.ylabel('$\mu_R$ (meV)',fontsize=19)
+#	    plt.gca().set_aspect('equal', adjustable='box')
 
-	    p4=fig.add_subplot(224)
-	    cp = p4.contourf(X, Y, BC_D,128)
+	    p4=fig.add_subplot(122)
+	    cp = p4.contourf(X*1e3, Y*1e3, BC_D,16)
 	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	    plt.title('(d) Down')
-	    plt.xlabel('$\mu_L$ (eV)')
-	    plt.ylabel('$\mu_R$ (eV)')
-	    plt.gca().set_aspect('equal', adjustable='box')
+	    plt.title('(b) Down')
+	    plt.xlabel('$\mu_L$ (meV)',fontsize=19)
+	    plt.ylabel('$\mu_R$ (meV)',fontsize=19)
+#	    plt.gca().set_aspect('equal', adjustable='box')
 
 	    plt.tight_layout()
 	    plt.show()
@@ -497,9 +556,6 @@ def geometric(wLC,wRC,amp):
 
 #	return current()
 	return lineInt()
-	return
-
-geometric(0,0,0)
 
 
 #=====================================================
@@ -555,7 +611,7 @@ def dynamic(muLC,muRC,amp):
 	
 	    
 	def Hamilt(t,chip,chim):
-	    H=np.zeros((3,3),dtype=complex)
+	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
 	
 	
 	    Wp0L=wL*(fLinU(t)*a**2+fLinD(t)*b**2)
@@ -819,15 +875,16 @@ def centerchange1():
 	p1=fig.add_subplot(211)
 	wL=1e9
 	wR=1e9
-	Nplot=51
-	centrange=400e-3
+#	Nplot=51
+	Nplot=2
+	centrange=350e-3
 	amp=160e-3
 	muLC=np.zeros(Nplot)
 	muRC=np.zeros(Nplot)
 	CU=np.zeros(Nplot)
 	CD=np.zeros(Nplot)
 	for i in range(Nplot):
-	    muLC[i]=3.0+centrange/(Nplot-1)*i
+	    muLC[i]=-0.1+centrange/(Nplot-1)*i
 	    muRC[i]=muLC[i]
 	    temp1=geometric(muLC[i],muRC[i],amp)
 	    temp2=dynamic(muLC[i],muRC[i],amp)
@@ -842,7 +899,7 @@ def centerchange1():
 	plt.xlabel('$\mu_L^{(C)}$ (eV)')
 	plt.ylabel('I (fA)')
 	plt.title('(a)')
-#	plt.legend(loc='upper left')
+	plt.legend(loc='upper left')
 #	plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 	
  
@@ -858,7 +915,7 @@ def centerchange1():
 	CU=np.zeros(Nplot)
 	CD=np.zeros(Nplot)
 	for i in range(Nplot):
-	    muLC[i]=3.10+centrange/(Nplot-1)*(i)
+	    muLC[i]=-0.05+centrange/(Nplot-1)*(i)
 	    muRC[i]=muLC[i]+0.07e-3
 	    temp1=geometric(muLC[i],muRC[i],amp)
 	    temp2=dynamic(muLC[i],muRC[i],amp)
@@ -897,10 +954,10 @@ def contour():
 	xlist = np.linspace(Eu-15e-3, Ed+15e-3, Ngrid,endpoint=True)
 	ylist = np.linspace(Eu-15e-3, Ed+15e-3, Ngrid,endpoint=True)
 	X, Y = np.meshgrid(xlist, ylist)
-	C_C=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_S=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_U=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_D=np.zeros((Ngrid,Ngrid),dtype=complex)
+	C_C=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_S=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_U=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_D=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
 	for i in range(Ngrid):
 		for j in range(Ngrid):
 			temp1=geometric(X[0][i],Y[j][0],amp)
@@ -918,10 +975,10 @@ def contour():
 	xlist = np.linspace(Eu-15e-3, Ed+15e-3, Ngrid,endpoint=True)
 	ylist = np.linspace(Eu-15e-3, Ed+15e-3, Ngrid,endpoint=True)
 	X, Y = np.meshgrid(xlist, ylist)
-	C_C2=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_S2=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_U2=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_D2=np.zeros((Ngrid,Ngrid),dtype=complex)
+	C_C2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_S2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_U2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_D2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
 	for i in range(Ngrid):
 		for j in range(Ngrid):
 			temp1=geometric(X[0][i],Y[j][0],amp)
@@ -1012,121 +1069,169 @@ def contour():
 def contour1():
 	global wL,wR
 	fig=plt.figure()
-	wL=10e9
-	wR=1e9
-	Ngrid=33
+	wL=1e10
+	wR=1e10
+#	Ngrid=3
+	Ngrid=21
 
 
-	xlist = np.linspace(-10e-3, 150e-3, Ngrid,endpoint=True)
-	ylist = np.linspace(0, 160e-3, Ngrid,endpoint=True)
+	xlist = np.linspace(-20e-3, 10e-3, Ngrid,endpoint=True)
+	ylist = np.linspace(50e-3, 200e-3, Ngrid,endpoint=True)
 	print(xlist,ylist)
 	X, Y = np.meshgrid(xlist, ylist)
-	C_C=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_S=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_U=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_D=np.zeros((Ngrid,Ngrid),dtype=complex)
+	C_C=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_S=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_U=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+	C_D=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+
+	Z=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+
 	for i in range(Ngrid):
 		for j in range(Ngrid):
-			temp1=geometric(3.13+X[0][i],3.13,Y[j][0])
+#			muRC=3.13-3.149
+			muRC=0
+			temp1=geometric(muRC+X[0][i],muRC,Y[j][0])
 #			temp1=np.array([0,0])
-			temp2=dynamic(3.13+X[0][i],3.13,Y[j][0])
+			temp2=dynamic(muRC+X[0][i],muRC,Y[j][0])
 			C_U[j,i]=(temp1[0]/2.0/np.pi+temp2[0])*1.60217662*1e-7
 			C_D[j,i]=(temp1[1]/2.0/np.pi+temp2[1])*1.60217662*1e-7
 			C_C[j,i]=C_U[j,i]+C_D[j,i]
 			C_S[j,i]=C_U[j,i]-C_D[j,i]
+			Z[j,i]=0
+			print('i=',i)
 
 
 
 
-	xlist = np.linspace(-10e-3, 150e-3, Ngrid,endpoint=True)
-	ylist = np.linspace(0, 160e-3, Ngrid,endpoint=True)
-	X, Y = np.meshgrid(xlist, ylist)
-	C_C2=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_S2=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_U2=np.zeros((Ngrid,Ngrid),dtype=complex)
-	C_D2=np.zeros((Ngrid,Ngrid),dtype=complex)
-	for i in range(Ngrid):
-		for j in range(Ngrid):
-			temp1=geometric(3.19+X[0][i],3.19,Y[j][0])
-#			temp1=np.array([0,0])
-			temp2=dynamic(3.19+X[0][i],3.19,Y[j][0])
-			C_U2[j,i]=(temp1[0]/2.0/np.pi+temp2[0])*1.60217662*1e-7
-			C_D2[j,i]=(temp1[1]/2.0/np.pi+temp2[1])*1.60217662*1e-7
-			C_C2[j,i]=C_U2[j,i]+C_D2[j,i]
-			C_S2[j,i]=C_U2[j,i]-C_D2[j,i]
+#	xlist = np.linspace(-10e-3, 150e-3, Ngrid,endpoint=True)
+#	ylist = np.linspace(0, 160e-3, Ngrid,endpoint=True)
+#	X, Y = np.meshgrid(xlist, ylist)
+#	C_C2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+#	C_S2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+#	C_U2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+#	C_D2=np.zeros((Ngrid,Ngrid),dtype=np.dtype(np.complex128))
+#	for i in range(Ngrid):
+#		for j in range(Ngrid):
+#			muRC=3.19-3.149
+#			temp1=geometric(muRC+X[0][i],muRC,Y[j][0])
+#			temp2=dynamic(muRC+X[0][i],muRC,Y[j][0])
+#			C_U2[j,i]=(temp1[0]/2.0/np.pi+temp2[0])*1.60217662*1e-7
+#			C_D2[j,i]=(temp1[1]/2.0/np.pi+temp2[1])*1.60217662*1e-7
+#			C_C2[j,i]=C_U2[j,i]+C_D2[j,i]
+#			C_S2[j,i]=C_U2[j,i]-C_D2[j,i]
+#			print('i=',i)
 			
 	matplotlib.rcParams['contour.negative_linestyle'] = 'solid'    
-	p5=fig.add_subplot(221)
 	
 	def fmt(x, pos):                                                            
 		return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')	
-#	cp = plt.contourf(X*1e3, Y*1e3, C_C,128)
-#	plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	cp = p5.contour(X*1e3, Y*1e3, C_C,colors='k')
-#	cp.collections[2].set_color('red')
-	cp.collections[6].set_linewidth(3.5)  
-	plt.clabel(cp,fmt='%4.0f')
-	cp = p5.contour(X*1e3, Y*1e3, C_C2,colors='red')
-#	cp.collections[2].set_color('red')
-	cp.collections[4].set_linewidth(3.5)  
-	plt.clabel(cp,fmt='%4.0f')
-	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
-	plt.ylabel('$A$ (meV)')
+
+#	p5=fig.add_subplot(221)
+#	cp = p5.contour(X*1e3, Y*1e3, C_C,colors='k')
+#	cp.collections[6].set_linewidth(3.5)  
+#	plt.clabel(cp,fmt='%4.0f')
+#	cp = p5.contour(X*1e3, Y*1e3, C_C2,colors='red')
+#	cp.collections[4].set_linewidth(3.5)  
+#	plt.clabel(cp,fmt='%4.0f')
+#	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
+#	plt.ylabel('$A$ (meV)')
+#	plt.title('(a) Charge')
+
+	p5=fig.add_subplot(221,projection='3d')
+	p5.plot_surface(X*1e3, Y*1e3, C_C,rstride=1, cstride=1,linewidth=0.5,  alpha=0.3,cmap=cm.coolwarm)
+#	p5.plot_surface(X*1e3, Y*1e3, Z,rstride=1, cstride=1,linewidth=0.5,  alpha=0.3,cmap="winter")
+	cset = p5.contour(X*1e3, Y*1e3, C_C, [0],colors='k', zdir='z', offset=0)
+	cset.collections[0].set_linewidth(2)  
+	plt.clabel(cset,fmt='%4.0f')
+	p5.set_xlabel('\n'+r'$e \bar{V}_b$ (meV)',linespacing=1)
+	p5.set_ylabel('\n $A$ (meV)',linespacing=1)
+	p5.zaxis.set_rotate_label(False)
+	p5.set_zlabel('$I_C$ (pA)',rotation=90)
+	p5.set_zlim(-80,120)
+	p5.xaxis.set_major_locator(MultipleLocator(10))
+	p5.yaxis.set_major_locator(MultipleLocator(50))
+	p5.zaxis.set_major_locator(MultipleLocator(60))
+	p5.view_init(elev=40, azim = 50)
 	plt.title('(a) Charge')
 
-	p6=fig.add_subplot(222)
+
+#	p6=fig.add_subplot(222)
 	
 	def fmt(x, pos):                                                            
 		return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')	
-#	cp = plt.contourf(X*1e3, Y*1e3, C_C,128)
-#	plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	cp = p6.contour(X*1e3, Y*1e3, C_S,colors='k')
-	plt.clabel(cp,fmt='%4.0f')
-	cp = p6.contour(X*1e3, Y*1e3, C_S2,colors='red')
-	plt.clabel(cp,fmt='%4.0f')
-	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
-	plt.ylabel('$A$ (meV)')
+#	cp = p6.contour(X*1e3, Y*1e3, C_S,colors='k')
+#	plt.clabel(cp,fmt='%4.0f')
+#	cp = p6.contour(X*1e3, Y*1e3, C_S2,colors='red')
+#	plt.clabel(cp,fmt='%4.0f')
+#	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
+#	plt.ylabel('$A$ (meV)')
+#	plt.title('(b) Spin')
+	p6=fig.add_subplot(222,projection='3d')
+	p6.plot_surface(X*1e3, Y*1e3, C_S, rstride=1, cstride=1,linewidth=0.5,  alpha=0.3,cmap=cm.coolwarm)
+	cset = p6.contour(X*1e3, Y*1e3, C_S, [0],colors='k', zdir='z', offset=0)
+	cset.collections[0].set_linewidth(2)  
+	p6.set_xlabel('\n'+r'$e \bar{V}_b$ (meV)',linespacing=1)
+	p6.set_ylabel('\n $A$ (meV)',linespacing=1)
+	p6.zaxis.set_rotate_label(False)
+	p6.set_zlabel('$I_S$ (pA)',rotation=90)
+	p6.set_zlim(-80,120)
+	p6.xaxis.set_major_locator(MultipleLocator(10))
+	p6.yaxis.set_major_locator(MultipleLocator(50))
+	p6.zaxis.set_major_locator(MultipleLocator(60))
+	p6.view_init(elev=40, azim = 50)
 	plt.title('(b) Spin')
 
-	p7=fig.add_subplot(223)
+#	p7=fig.add_subplot(223)
 	
 	def fmt(x, pos):                                                            
 		return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')	
-#	cp = plt.contourf(X*1e3, Y*1e3, C_C,128)
-#	plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	cp = p7.contour(X*1e3, Y*1e3, C_U,colors='k')
-#	cp.collections[2].set_color('red')
-	cp.collections[6].set_linewidth(3.5) 
-	plt.clabel(cp,fmt='%4.0f')
-	cp = p7.contour(X*1e3, Y*1e3, C_U2,colors='red')
-#	cp.collections[2].set_color('red')
-	cp.collections[5].set_linewidth(3.5) 
-	plt.clabel(cp,fmt='%4.0f')
-	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
-	plt.ylabel('$A$ (meV)')
-	plt.title('(c) Up')
-
-	p8=fig.add_subplot(224)
+#	cp = p7.contour(X*1e3, Y*1e3, C_U,colors='k')
+#	plt.clabel(cp,fmt='%4.0f')
+#	cp = p7.contour(X*1e3, Y*1e3, C_U2,colors='red')
+#	plt.clabel(cp,fmt='%4.0f')
+#	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
+#	plt.ylabel('$A$ (meV)')
+#	plt.title('(c) Up')
+	p7=fig.add_subplot(223,projection='3d')
+	p7.plot_surface(X*1e3, Y*1e3, C_U, rstride=1, cstride=1,linewidth=0.5, alpha=0.3,cmap=cm.coolwarm)
+	cset = p7.contour(X*1e3, Y*1e3, C_U,[0], colors='k', zdir='z', offset=0)
+	cset.collections[0].set_linewidth(2)  
+	p7.set_xlabel('\n'+r'$e \bar{V}_b$ (meV)',linespacing=1)
+	p7.set_ylabel('\n $A$ (meV)',linespacing=1)
+	p7.zaxis.set_rotate_label(False)
+	p7.set_zlabel(r'$I_\uparrow$ (pA)',rotation=90)
+	p7.set_zlim(-80,120)
+	p7.xaxis.set_major_locator(MultipleLocator(10))
+	p7.yaxis.set_major_locator(MultipleLocator(50))
+	p7.zaxis.set_major_locator(MultipleLocator(60))
+	p7.view_init(elev=40, azim = 50)
+	plt.title('\n (c) Up',linespacing=1)
 	
 	def fmt(x, pos):                                                            
 		return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')	
-#	cp = plt.contourf(X*1e3, Y*1e3, C_C,128)
-#	plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-	cp = p8.contour(X*1e3, Y*1e3, C_D,colors='k')
-#	cp.collections[2].set_color('red')
-	cp.collections[4].set_linewidth(3.5) 
-	plt.clabel(cp,fmt='%4.0f')
-	cp = p8.contour(X*1e3, Y*1e3, C_D2,colors='red')
-#	cp.collections[2].set_color('red')
-	cp.collections[4].set_linewidth(3.5) 
-	plt.clabel(cp,fmt='%4.0f')
-	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
-	plt.ylabel('$A$ (meV)')
-	plt.title('(d) Down')
+#	cp = p8.contour(X*1e3, Y*1e3, C_D,colors='k')
+#	plt.clabel(cp,fmt='%4.0f')
+#	cp = p8.contour(X*1e3, Y*1e3, C_D2,colors='red')
+#	plt.clabel(cp,fmt='%4.0f')
+#	plt.xlabel('$\mu_L^{(C)}-\mu_R^{(C)}$ (meV)')
+#	plt.ylabel('$A$ (meV)')
+#	plt.title('(d) Down')
+	p8=fig.add_subplot(224,projection='3d')
+	p8.plot_surface(X*1e3, Y*1e3, C_D, rstride=1, cstride=1,linewidth=0.5,  alpha=0.3,cmap=cm.coolwarm)
+	cset = p8.contour(X*1e3, Y*1e3, C_D,[0], colors='k', zdir='z', offset=0)
+	cset.collections[0].set_linewidth(2)  
+	p8.set_xlabel('\n'+r'$e \bar{V}_b$ (meV)',linespacing=1)
+	p8.set_ylabel('\n $A$ (meV)',linespacing=1)
+	p8.zaxis.set_rotate_label(False)
+	p8.set_zlabel(r'$I_\downarrow$ (pA)',rotation=90)
+	p8.set_zlim(-80,120)
+	p8.xaxis.set_major_locator(MultipleLocator(10))
+	p8.yaxis.set_major_locator(MultipleLocator(50))
+	p8.zaxis.set_major_locator(MultipleLocator(60))
+	p8.view_init(elev=40, azim = 50)
+	plt.title('\n (d) Down',linespacing=1)        
 	
-#	plt.gca().set_aspect('equal', adjustable='box')
 	plt.tight_layout() 
-#	plt.legend((l1, l2,l3,l4), ('Charge', 'Spin','Up','Down'), loc='ower center')
 
 	plt.show()
 
@@ -1171,17 +1276,17 @@ def geometricplot():
 
 #centerchange()	
 
-centerchange1()	
+#centerchange1()	
 
-wL=1e9
-wR=1e9
-muL=3.43
-muR=3.43
+#wL=1e0
+#wR=1e0
+#muL=0
+#muR=0
 #print(dynamic(muL,muR,0e-3)[0]*1.60217662*1e-4,dynamic(muL,muR,0e-3)[1]*1.60217662*1e-4)
-print(geometric(muL,muR,0e-3))
+#print(geometric(muL,muR,0e-3))
 
 
-#contour1()
+contour1()
 
 
 

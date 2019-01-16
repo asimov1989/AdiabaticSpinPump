@@ -45,10 +45,20 @@ def eigofH(hz,h):
 a=eigofH(hz,h)[0]
 b=eigofH(hz,h)[1]
 
-print("a=",a,"b=",b)
+#print("a=",a,"b=",b)
 
 
-
+def f(muL,muR,Vg,spin, electrode,direction):
+	if spin == "up":
+		E = Eu
+	else: E = Ed
+	if electrode == "L":
+		mu = muL
+	else: mu = muR
+	if direction == "in":
+		sign = 1
+	else: sign = -1
+	return 1.0/(1.0+np.exp(sign*(E-Vg-mu)/T))
 
 
 def fLinU(muL,muR,Vg):
@@ -90,15 +100,15 @@ def current(muL,muR,Vg):
 
 
 
-    Wp0L=wL*(fLinU(muL,muR,Vg)*a**2+fLinD(muL,muR,Vg)*b**2)
-    Wp0R=wR*(fRinU(muL,muR,Vg)*a**2+fRinD(muL,muR,Vg)*b**2)
-    Wm0L=wL*(fLinU(muL,muR,Vg)*b**2+fLinD(muL,muR,Vg)*a**2)
-    Wm0R=wR*(fRinU(muL,muR,Vg)*b**2+fRinD(muL,muR,Vg)*a**2)
+    Wp0L=wL*(f(muL,muR,Vg, "up", "L", "in")*a**2+f(muL,muR,Vg, "dn", "L", "in")*b**2)
+    Wp0R=wR*(f(muL,muR,Vg, "up", "R", "in")*a**2+f(muL,muR,Vg, "dn","R","in")*b**2)
+    Wm0L=wL*(f(muL,muR,Vg,"up","L","in")*b**2+f(muL,muR,Vg,"dn","L","in")*a**2)
+    Wm0R=wR*(f(muL,muR,Vg,"up","R","in")*b**2+f(muL,muR,Vg,"dn","R","in")*a**2)
     
-    W0pL=wL*(fLoutU(muL,muR,Vg)*a**2+fLoutD(muL,muR,Vg)*b**2)
-    W0pR=wR*(fRoutU(muL,muR,Vg)*a**2+fRoutD(muL,muR,Vg)*b**2)
-    W0mL=wL*(fLoutU(muL,muR,Vg)*b**2+fLoutD(muL,muR,Vg)*a**2)
-    W0mR=wR*(fRoutU(muL,muR,Vg)*b**2+fRoutD(muL,muR,Vg)*a**2)
+    W0pL=wL*(f(muL,muR,Vg,"up","L","out")*a**2+f(muL,muR,Vg,"dn","L","out")*b**2)
+    W0pR=wR*(f(muL,muR,Vg,"up","R","out")*a**2+f(muL,muR,Vg,"dn","R","out")*b**2)
+    W0mL=wL*(f(muL,muR,Vg,"up","L","out")*b**2+f(muL,muR,Vg,"dn","L","out")*a**2)
+    W0mR=wR*(f(muL,muR,Vg,"up","R","out")*b**2+f(muL,muR,Vg,"dn","R","out")*a**2)
    
     W0p=W0pL+W0pR
     W0m=W0mL+W0mR
@@ -278,13 +288,13 @@ def diamond():
 	ax1 = fig.add_subplot(224)
 	ax2 = ax1.twinx()
 
-	line1=ax1.plot(Bias,Iup,label=r'$I_\uparrow$',linewidth='2')
+	line1=ax1.plot(Bias,Iup,label=r'$I_\uparrow$',linewidth=2)
 	ax1.set_ylim([0,1])
 	ax2.set_ylim([0,1])
 
-	line2=ax2.plot(Bias,rhop,label=r'$\rho_\uparrow$',linestyle='dashed',linewidth='2')
-	line3=ax2.plot(Bias,rho0,label=r'$\rho_0$',linestyle='dashdot',linewidth='2')
-	line4=ax2.plot(Bias,rhom,label=r'$\rho_\downarrow$',linestyle='dotted',linewidth='2')
+	line2=ax2.plot(Bias,rhop,label=r'$\rho_\uparrow$',linestyle='dashed',linewidth=2)
+	line3=ax2.plot(Bias,rho0,label=r'$\rho_0$',linestyle='dashdot',linewidth=2)
+	line4=ax2.plot(Bias,rhom,label=r'$\rho_\downarrow$',linestyle='dotted',linewidth=2)
 #	plt.axhline(0)
 	ax1.set_xlabel('$V_b$ (V)')
 	ax1.set_ylabel('$I$ (nA)')

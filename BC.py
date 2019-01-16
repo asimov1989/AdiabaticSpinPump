@@ -25,17 +25,13 @@ matplotlib.rcParams.update({'font.size': 16})
 #matplotlib.rcParams['xtick.major.pad']='0'
 
 global T,Eu,Ed,h,hz,wL,wR, a, b ,dchi,Tp,omega
-#T=5e-3
-#Ed=3.498
-#Eu=3.441
 
-
-#Ed=3.270
-#Eu=3.149
+Ed=3.270
+Eu=3.149
 shift=0.0
 scale=1e0
 T=10e-3
-Ed=scale*(3.270-3.149+shift)
+Ed=scale*(Ed-Eu+shift)
 Eu=scale*(0.0+shift)
 h=0e-3
 hz=0
@@ -1058,8 +1054,4 @@ print("time:", (time.time() - start_time)/60.0)
 #plt.show()
 
 
-######################################################
-######################################################
-######################################################
 
-# delta/temperature

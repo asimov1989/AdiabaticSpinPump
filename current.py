@@ -22,15 +22,14 @@ label_size = 17
 matplotlib.rcParams.update({'font.size': 16})
 #matplotlib.rcParams['xtick.major.pad']='0'
 
-global T,Eu,Ed,h,hz,wL,wR, a, b ,dchi,Tp,omega
+global T,Eu,Ed,wL,wR, dchi,Tp,omega
 
 shift=0.0
 scale=1e0
 T=10e-3 # temperature
 Ed=scale*(3.270-3.149+shift)
 Eu=scale*(0.0+shift)
-h=0e-3
-hz=0
+
 
 dchi=8e-5+0j
 #print(dchi)
@@ -38,57 +37,41 @@ dchi=8e-5+0j
 omega=1e9  # frequency
 Tp=2*math.pi/omega   # period
 
-#wL=1e9
-#wR=1e9
-
-
-def eigofH(hz,h):
-    delta=8e-3
-    nom=delta+hz+math.sqrt((hz+delta)**2/4+h**2)
-    dem=2*h
-    norm=math.sqrt(nom**2+dem**2)
-    [a,b]=[nom/norm,dem/norm]
-    return [a,b]
-
-a=eigofH(hz,h)[0]
-b=eigofH(hz,h)[1]
-
-
-
-
+wL=1e10
+wR=1e10
 
 
 def geometric(muLC,muRC,amp):
 	def fLinU(muL,muR):
-	    f=1.0/(1.0+np.exp((Eu+hz/2.0-muL)/T))
+	    f=1.0/(1.0+np.exp((Eu-muL)/T))
 	    return f
 	
 	def fLoutU(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Eu+hz/2.0-muL)/T))
+	    f=1.0/(1.0+np.exp(-(Eu-muL)/T))
 	    return f
 	
 	def fRinU(muL,muR):
-	    f=1.0/(1.0+np.exp((Eu+hz/2.0-muR)/T))
+	    f=1.0/(1.0+np.exp((Eu-muR)/T))
 	    return f
 	
 	def fRoutU(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Eu+hz/2.0-muR)/T))
+	    f=1.0/(1.0+np.exp(-(Eu-muR)/T))
 	    return f
 	
 	def fLinD(muL,muR):
-	    f=1.0/(1.0+np.exp((Ed-hz/2.0-muL)/T))
+	    f=1.0/(1.0+np.exp((Ed-muL)/T))
 	    return f
 	
 	def fLoutD(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Ed-hz/2.0-muL)/T))
+	    f=1.0/(1.0+np.exp(-(Ed-muL)/T))
 	    return f
 	
 	def fRinD(muL,muR):
-	    f=1.0/(1.0+np.exp((Ed-hz/2.0-muR)/T))
+	    f=1.0/(1.0+np.exp((Ed-muR)/T))
 	    return f
 	
 	def fRoutD(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Ed-hz/2.0-muR)/T))
+	    f=1.0/(1.0+np.exp(-(Ed-muR)/T))
 	    return f
 	
 	    
@@ -98,15 +81,15 @@ def geometric(muLC,muRC,amp):
 	
 
 	
-	    Wp0L=wL*(fLinU(muL,muR)*a**2+fLinD(muL,muR)*b**2)
-	    Wp0R=wR*(fRinU(muL,muR)*a**2+fRinD(muL,muR)*b**2)
-	    Wm0L=wL*(fLinU(muL,muR)*b**2+fLinD(muL,muR)*a**2)
-	    Wm0R=wR*(fRinU(muL,muR)*b**2+fRinD(muL,muR)*a**2)
+	    Wp0L=wL*(fLinU(muL,muR))
+	    Wp0R=wR*(fRinU(muL,muR))
+	    Wm0L=wL*(fLinD(muL,muR))
+	    Wm0R=wR*(fRinD(muL,muR))
 	    
-	    W0pL=wL*(fLoutU(muL,muR)*a**2+fLoutD(muL,muR)*b**2)
-	    W0pR=wR*(fRoutU(muL,muR)*a**2+fRoutD(muL,muR)*b**2)
-	    W0mL=wL*(fLoutU(muL,muR)*b**2+fLoutD(muL,muR)*a**2)
-	    W0mR=wR*(fRoutU(muL,muR)*b**2+fRoutD(muL,muR)*a**2)
+	    W0pL=wL*(fLoutU(muL,muR))
+	    W0pR=wR*(fRoutU(muL,muR))
+	    W0mL=wL*(fLoutD(muL,muR))
+	    W0mR=wR*(fRoutD(muL,muR))
 	   
 	    W0p=W0pL+W0pR
 	    W0m=W0mL+W0mR
@@ -133,49 +116,49 @@ def geometric(muLC,muRC,amp):
 	    return H
 	    
 	def fLinUdiff(muL,muR):
-	    a=np.exp((Eu+hz/2.0-muL)/T)
+	    a=np.exp((Eu-muL)/T)
 #	    f=a/(1.0+a)**2.0/T
 	    f=1.0/(1.0/a+2+a)/T
 	    return f
 	
 	def fLoutUdiff(muL,muR):
-	    a=np.exp((Eu+hz/2.0-muL)/T)
+	    a=np.exp((Eu-muL)/T)
 #	    f=-a/(1.0+a)**2.0/T
 	    f=-1.0/(1.0/a+2+a)/T
 	    return f
 	
 	def fRinUdiff(muL,muR):
-	    a=np.exp((Eu+hz/2.0-muR)/T)
+	    a=np.exp((Eu-muR)/T)
 #	    f=a/(1.0+a)**2.0/T
 	    f=1.0/(1.0/a+2+a)/T
 	    return f
 	
 	def fRoutUdiff(muL,muR):
-	    a=np.exp((Eu+hz/2.0-muR)/T)
+	    a=np.exp((Eu-muR)/T)
 #	    f=-a/(1.0+a)**2.0/T
 	    f=-1.0/(1.0/a+2+a)/T
 	    return f
 	
 	def fLinDdiff(muL,muR):
-	    a=np.exp((Ed-hz/2.0-muL)/T)
+	    a=np.exp((Ed-muL)/T)
 #	    f=a/(1.0+a)**2.0/T
 	    f=1.0/(1.0/a+2+a)/T
 	    return f
 	
 	def fLoutDdiff(muL,muR):
-	    a=np.exp((Ed-hz/2.0-muL)/T)
+	    a=np.exp((Ed-muL)/T)
 #	    f=-a/(1.0+a)**2.0/T
 	    f=-1.0/(1.0/a+2+a)/T
 	    return f
 	
 	def fRinDdiff(muL,muR):
-	    a=np.exp((Ed-hz/2.0-muR)/T)
+	    a=np.exp((Ed-muR)/T)
 #	    f=a/(1.0+a)**2.0/T
 	    f=1.0/(1.0/a+2+a)/T
 	    return f
 	
 	def fRoutDdiff(muL,muR):
-	    a=np.exp((Ed-hz/2.0-muR)/T)
+	    a=np.exp((Ed-muR)/T)
 #	    f=-a/(1.0+a)**2.0/T
 	    f=-1.0/(1.0/a+2+a)/T
 	    return f
@@ -184,17 +167,16 @@ def geometric(muLC,muRC,amp):
 	def HdiffL(muL,muR,chip,chim):
 	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
 	
-	    a=eigofH(hz,h)[0]
-	    b=eigofH(hz,h)[1]
+
 	
-	    Wp0L=wL*(fLinUdiff(muL,muR)*a**2+fLinDdiff(muL,muR)*b**2)
+	    Wp0L=wL*(fLinUdiff(muL,muR))
 	    Wp0R=0
-	    Wm0L=wL*(fLinUdiff(muL,muR)*b**2+fLinDdiff(muL,muR)*a**2)
+	    Wm0L=wL*(fLinDdiff(muL,muR))
 	    Wm0R=0
 	    
-	    W0pL=wL*(fLoutUdiff(muL,muR)*a**2+fLoutDdiff(muL,muR)*b**2)
+	    W0pL=wL*(fLoutUdiff(muL,muR))
 	    W0pR=0
-	    W0mL=wL*(fLoutUdiff(muL,muR)*b**2+fLoutDdiff(muL,muR)*a**2)
+	    W0mL=wL*(fLoutDdiff(muL,muR))
 	    W0mR=0
 	   
 	    W0p=W0pL+W0pR
@@ -222,26 +204,24 @@ def geometric(muLC,muRC,amp):
 	def HdiffR(muL,muR,chip,chim):
 	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
 	
-	    a=eigofH(hz,h)[0]
-	    b=eigofH(hz,h)[1]
 	
 	    Wp0L=0
-	    Wp0R=wR*(fRinUdiff(muL,muR)*a**2+fRinDdiff(muL,muR)*b**2)
-	    Wp0Ru=wR*(fRinUdiff(muL,muR)*a**2)
-	    Wp0Rd=wR*(fRinDdiff(muL,muR)*b**2)
+	    Wp0R=wR*(fRinUdiff(muL,muR))
+	    Wp0Ru=wR*(fRinUdiff(muL,muR))
+	    Wp0Rd=0
 	    Wm0L=0
-	    Wm0R=wR*(fRinUdiff(muL,muR)*b**2+fRinDdiff(muL,muR)*a**2)
-	    Wm0Ru=wR*(fRinUdiff(muL,muR)*b**2)
-	    Wm0Rd=wR*(fRinDdiff(muL,muR)*a**2)
+	    Wm0R=wR*(fRinDdiff(muL,muR))
+	    Wm0Ru=0
+	    Wm0Rd=wR*(fRinDdiff(muL,muR))
 	    
 	    W0pL=0
-	    W0pR=wR*(fRoutUdiff(muL,muR)*a**2+fRoutDdiff(muL,muR)*b**2)
-	    W0pRu=wR*(fRoutUdiff(muL,muR)*a**2)
-	    W0pRd=wR*(fRoutDdiff(muL,muR)*b**2)
+	    W0pR=wR*(fRoutUdiff(muL,muR))
+	    W0pRu=wR*(fRoutUdiff(muL,muR))
+	    W0pRd=0
 	    W0mL=0
-	    W0mR=wR*(fRoutUdiff(muL,muR)*b**2+fRoutDdiff(muL,muR)*a**2)
-	    W0mRu=wR*(fRoutUdiff(muL,muR)*b**2)
-	    W0mRd=wR*(fRoutDdiff(muL,muR)*a**2)
+	    W0mR=wR*(fRoutDdiff(muL,muR))
+	    W0mRu=0
+	    W0mRd=wR*(fRoutDdiff(muL,muR))
 	   
 	    W0p=W0pL+W0pR
 	    W0m=W0mL+W0mR
@@ -475,12 +455,9 @@ def geometric(muLC,muRC,amp):
 		
 
 	def fmt(x, pos):
-#  		a, b = '{:.2e}'.format(x).split('e')
-#  		b = int(b)
-#  		return r'${} \times 10^{{{}}}$'.format(a, b)
-			return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')
+		return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')
     
-	def BC_plot1():
+	def BC_plot():
 	    Ngrid=41 #41
 	    xlist = np.linspace(Eu-50e-3, Ed+50e-3, Ngrid,endpoint=True)
 	    ylist = np.linspace(Eu-50e-3, Ed+50e-3, Ngrid,endpoint=True)
@@ -502,17 +479,11 @@ def geometric(muLC,muRC,amp):
 	            BC_C[j,i]=(temp[0]+temp[1])
 	            BC_S[j,i]=(temp[0]-temp[1])
 	            BC_U[j,i]=(temp[0])
-#	            if abs(BC_U[j,i])<8e-11:
-#	            	BC_U[j,i]=0
+
 	            if i>j:
 	            	BC_U[j,i]=(BC_U[j,i]+BC_U[i,j])/2.0
 	            	BC_U[i,j]=BC_U[j,i]
 	            BC_D[j,i]=(temp[1])
-#	            if BC_U[j,i]>9e-10:
-#	            	print(j,i,X[0][j],Y[i][0],BC_U[j,i])
-	            #print("polarization=",BC_D[i,j]/BC_U[i,j])
-	
-	    print(BC_U[10,30])
 
 	    fig=plt.figure()
 
@@ -552,7 +523,7 @@ def geometric(muLC,muRC,amp):
 	    plt.show()
 	    return
 
-	BC_plot1()
+	BC_plot()
 
 #	return current()
 	return lineInt()
@@ -578,35 +549,35 @@ def dynamic(muLC,muRC,amp):
 	    return m
 	
 	def fLinU(t):
-	    f=1/(1+np.exp((Eu+hz/2-muL(t))/T))
+	    f=1/(1+np.exp((Eu-muL(t))/T))
 	    return f
 	
 	def fLoutU(t):
-	    f=1-1/(1+np.exp((Eu+hz/2-muL(t))/T))
+	    f=1-1/(1+np.exp((Eu-muL(t))/T))
 	    return f
 	
 	def fRinU(t):
-	    f=1/(1+np.exp((Eu+hz/2-muR(t))/T))
+	    f=1/(1+np.exp((Eu-muR(t))/T))
 	    return f
 	
 	def fRoutU(t):
-	    f=1-1/(1+np.exp((Eu+hz/2-muR(t))/T))
+	    f=1-1/(1+np.exp((Eu-muR(t))/T))
 	    return f
 	
 	def fLinD(t):
-	    f=1/(1+np.exp((Ed-hz/2-muL(t))/T))
+	    f=1/(1+np.exp((Ed-muL(t))/T))
 	    return f
 	
 	def fLoutD(t):
-	    f=1-1/(1+np.exp((Ed-hz/2-muL(t))/T))
+	    f=1-1/(1+np.exp((Ed-muL(t))/T))
 	    return f
 	
 	def fRinD(t):
-	    f=1/(1+np.exp((Ed-hz/2-muR(t))/T))
+	    f=1/(1+np.exp((Ed-muR(t))/T))
 	    return f
 	
 	def fRoutD(t):
-	    f=1-1/(1+np.exp((Ed-hz/2-muR(t))/T))
+	    f=1-1/(1+np.exp((Ed-muR(t))/T))
 	    return f
 	
 	    
@@ -1286,7 +1257,9 @@ def geometricplot():
 #print(geometric(muL,muR,0e-3))
 
 
-contour1()
+geometric(0,0,0)
+
+#contour1()
 
 
 

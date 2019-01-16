@@ -22,6 +22,7 @@ T=4.5e-3
 Ed=3.270
 #Ed=3.441
 Eu=3.149
+muR=3.43
 h=0e-3
 hz=0
 
@@ -61,45 +62,8 @@ def f(muL,muR,Vg,spin, electrode,direction):
 	return 1.0/(1.0+np.exp(sign*(E-Vg-mu)/T))
 
 
-def fLinU(muL,muR,Vg):
-    f=1.0/(1.0+np.exp((Eu-Vg-muL)/T))
-    return f
-
-def fLoutU(muL,muR,Vg):
-    f=1.0/(1.0+np.exp(-(Eu-Vg-muL)/T))
-    return f
-
-def fRinU(muL,muR,Vg):
-    f=1.0/(1.0+np.exp((Eu-Vg-muR)/T))
-    return f
-
-def fRoutU(muL,muR,Vg):
-    f=1.0/(1.0+np.exp(-(Eu-Vg-muR)/T))
-    return f
-
-def fLinD(muL,muR,Vg):
-    f=1.0/(1.0+np.exp((Ed-Vg-muL)/T))
-    return f
-
-def fLoutD(muL,muR,Vg):
-    f=1.0/(1.0+np.exp(-(Ed-Vg-muL)/T))
-    return f
-
-def fRinD(muL,muR,Vg):
-    f=1.0/(1.0+np.exp((Ed-Vg-muR)/T))
-    return f
-
-def fRoutD(muL,muR,Vg):
-    f=1.0/(1.0+np.exp(-(Ed-Vg-muR)/T))
-    return f
-
     
 def current(muL,muR,Vg):
-    H=np.zeros((3,3),dtype=complex)
-
-
-
-
     Wp0L=wL*(f(muL,muR,Vg, "up", "L", "in")*a**2+f(muL,muR,Vg, "dn", "L", "in")*b**2)
     Wp0R=wR*(f(muL,muR,Vg, "up", "R", "in")*a**2+f(muL,muR,Vg, "dn","R","in")*b**2)
     Wm0L=wL*(f(muL,muR,Vg,"up","L","in")*b**2+f(muL,muR,Vg,"dn","L","in")*a**2)
@@ -129,62 +93,12 @@ def current(muL,muR,Vg):
 	    
 
 
-def centerchange1(Vg):
-#	global wL,wR
-	
-
-	Nplot=100
-	biasrange=100e-3
-	Bias=np.zeros(Nplot)
-	Iup=np.zeros(Nplot)
-	rho0=np.zeros(Nplot)
-	rhop=np.zeros(Nplot)
-	rhom=np.zeros(Nplot)
-	muR=3.43
-	
-	for i in range(Nplot):
-		Bias[i]=biasrange/Nplot*i
-		Iup[i]=current(muR+Bias[i],muR)[0]*1.60217662*1e-7
-		rho0[i]=current(muR+Bias[i],muR)[1]
-		rhop[i]=current(muR+Bias[i],muR)[2]
-		rhom[i]=current(muR+Bias[i],muR)[3]
-	
-	
-	
-	fig, ax1 = plt.subplots()
-	ax2 = ax1.twinx()
-
-	line1=ax1.plot(Bias*1e3,Iup,label=r'$I_\uparrow$',linewidth='2')
-	ax1.set_ylim([0,120])
-
-	line2=ax2.plot(Bias*1e3,rhop,label=r'$\rho_\uparrow$',linestyle='dashed',linewidth='2')
-	line3=ax2.plot(Bias*1e3,rho0,label=r'$\rho_0$',linestyle='dashed',linewidth='2')
-	line4=ax2.plot(Bias*1e3,rhom,label=r'$\rho_\downarrow$',linestyle='dashed',linewidth='2')
-#	plt.axhline(0)
-	ax1.set_xlabel('V (mV)')
-	ax1.set_ylabel('I (pA)')
-	ax2.set_ylabel(r'$\rho$')
-	
-	line=line1+line2+line3+line4
-	labs = [l.get_label() for l in line]
-	ax1.legend(line, labs, loc='best')
-
-#	ax1.legend(loc='upper center')
-#	ax2.legend(loc='best')
-#	plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-	
-
-	plt.show()
-	return
 
 
 def diamond():
 	def fmt(x, pos):
-# 	a, b = '{:.2e}'.format(x).split('e')
-# 	b = int(b)
-# 	return r'${} \times 10^{{{}}}$'.format(a, b)
-		return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')
-	Ngrid=201
+	    return '{0:.1E}'.format(x).replace('+0', '').replace('-0', '-')
+	Ngrid=201  # number of points for plotting
 	temp=0.2
 	Lim=1.3
 
@@ -321,13 +235,13 @@ def diamond():
 
 	plt.title('(d) NDC')
 
-#	plt.tight_layout()
+	plt.tight_layout()
 	plt.show()
 	
 	
 
 	return
 
-#centerchange1(0)	
+#centerchange1(0,muR)	
 diamond()
 print("time:", (time.time() - start_time)/60.0)

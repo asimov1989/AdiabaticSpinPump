@@ -10,43 +10,20 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import numpy as np
-from numpy import linalg as LA
-from scipy import linalg as LAs
-from scipy.linalg import eig as eigscipy
+
 import time
 start_time = time.time()
 matplotlib.rcParams.update({'font.size': 16})
 
-global T,Eu,Ed,h,hz,wL,wR, a, b ,dchi,Tp,omega
-T=4.5e-3
-Ed=3.270
-#Ed=3.441
-Eu=3.149
-muR=3.43
-h=0e-3
-hz=0
+T=4.5e-3 # temperature
+Ed=3.270 # charging energy for spin down
+Eu=3.149 # charging energy for spin up
+muR=3.43 # chemical potential of the right electrode
 
-dchi=1e-6+0j
-
-omega=1e6
-Tp=2*math.pi/omega
-
-wL=1e10
-wR=1e10
+wL=1e10  # transition rates for left electrode
+wR=1e10  # transition rates for right electrode
 
 
-def eigofH(hz,h):
-    delta=8e-3
-    nom=delta+hz+math.sqrt((hz+delta)**2/4+h**2)
-    dem=2*h
-    norm=math.sqrt(nom**2+dem**2)
-    [a,b]=[nom/norm,dem/norm]
-    return [a,b]
-
-a=eigofH(hz,h)[0]
-b=eigofH(hz,h)[1]
-
-#print("a=",a,"b=",b)
 
 
 def f(muL,muR,Vg,spin, electrode,direction):
@@ -64,15 +41,15 @@ def f(muL,muR,Vg,spin, electrode,direction):
 
     
 def current(muL,muR,Vg):
-    Wp0L=wL*(f(muL,muR,Vg, "up", "L", "in")*a**2+f(muL,muR,Vg, "dn", "L", "in")*b**2)
-    Wp0R=wR*(f(muL,muR,Vg, "up", "R", "in")*a**2+f(muL,muR,Vg, "dn","R","in")*b**2)
-    Wm0L=wL*(f(muL,muR,Vg,"up","L","in")*b**2+f(muL,muR,Vg,"dn","L","in")*a**2)
-    Wm0R=wR*(f(muL,muR,Vg,"up","R","in")*b**2+f(muL,muR,Vg,"dn","R","in")*a**2)
+    Wp0L=wL*(f(muL,muR,Vg, "up", "L", "in"))
+    Wp0R=wR*(f(muL,muR,Vg, "up", "R", "in"))
+    Wm0L=wL*(f(muL,muR,Vg,"dn","L","in"))
+    Wm0R=wR*(f(muL,muR,Vg,"dn","R","in"))
     
-    W0pL=wL*(f(muL,muR,Vg,"up","L","out")*a**2+f(muL,muR,Vg,"dn","L","out")*b**2)
-    W0pR=wR*(f(muL,muR,Vg,"up","R","out")*a**2+f(muL,muR,Vg,"dn","R","out")*b**2)
-    W0mL=wL*(f(muL,muR,Vg,"up","L","out")*b**2+f(muL,muR,Vg,"dn","L","out")*a**2)
-    W0mR=wR*(f(muL,muR,Vg,"up","R","out")*b**2+f(muL,muR,Vg,"dn","R","out")*a**2)
+    W0pL=wL*(f(muL,muR,Vg,"up","L","out"))
+    W0pR=wR*(f(muL,muR,Vg,"up","R","out"))
+    W0mL=wL*(f(muL,muR,Vg,"dn","L","out"))
+    W0mR=wR*(f(muL,muR,Vg,"dn","R","out"))
    
     W0p=W0pL+W0pR
     W0m=W0mL+W0mR
@@ -108,10 +85,9 @@ def diamond():
 	Iup=np.zeros((Ngrid,Ngrid))
 	Idn=np.zeros((Ngrid,Ngrid))
 	Itot=np.zeros((Ngrid,Ngrid))
-	dIup=np.zeros((Ngrid,Ngrid))
-	dIdn=np.zeros((Ngrid,Ngrid))
-	dItot=np.zeros((Ngrid,Ngrid))
-#	muC=3.149
+#	dIup=np.zeros((Ngrid,Ngrid))
+#	dIdn=np.zeros((Ngrid,Ngrid))
+#	dItot=np.zeros((Ngrid,Ngrid))
 	
 	for i in range(Ngrid):
 		for j in range(Ngrid):
@@ -123,14 +99,12 @@ def diamond():
 			Itot[j,i]=temp[5]*1.60217662*1e-10
 	
 	
-#	print(current(3.48+0.02/2,3.48-0.02/2,0.02))
-	
-	for i in range(1,Ngrid-1):
-		for j in range(Ngrid):
-			dIup[j,i]=(Iup[j,i+1]-Iup[j,i-1])/(X[0][i+1]-X[0][i-1])
-			dIdn[j,i]=(Idn[j,i+1]-Idn[j,i-1])/(X[0][i+1]-X[0][i-1])
-#			dItot[j,i]=(Itot[j,i+1]-Itot[j,i-1])/(X[0][i+1]-X[0][i-1])
-			dItot[j,i]=dIup[j,i]+dIdn[j,i]
+
+#	for i in range(1,Ngrid-1):
+#		for j in range(Ngrid):
+#			dIup[j,i]=(Iup[j,i+1]-Iup[j,i-1])/(X[0][i+1]-X[0][i-1])
+#			dIdn[j,i]=(Idn[j,i+1]-Idn[j,i-1])/(X[0][i+1]-X[0][i-1])
+#			dItot[j,i]=dIup[j,i]+dIdn[j,i]
 	
 
 	
@@ -139,10 +113,6 @@ def diamond():
 	
 	p1=fig.add_subplot(221)
 	cp = p1.contourf(X,Y , Iup,np.linspace(0,Lim, Ncolor),cmap=plt.cm.Reds)
-#	cp = p1.contourf(Y,X , Iup,np.linspace(0,120, 256),extend="both")
-#	cp.cmap.set_under(color='blue')
-#	cp.set_clim(0, 120)
-#	plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
 
 	plt.title('(a) Up')
 	plt.xticks(np.arange(3.0,3.4,0.1))

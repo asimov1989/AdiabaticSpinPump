@@ -31,14 +31,13 @@ Ed=scale*(3.270-3.149+shift)
 Eu=scale*(0.0+shift)
 
 
-dchi=8e-5+0j
-#print(dchi)
+dchi=8e-5+0j # parameter for numerically calculating derivative
 
 omega=1e9  # frequency
 Tp=2*math.pi/omega   # period
 
-wL=1e10
-wR=1e10
+wL=1e10 # tunneling rate
+wR=1e10 # tunneling rate
 
 
 def geometric(muLC,muRC,amp):

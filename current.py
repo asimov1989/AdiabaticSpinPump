@@ -369,52 +369,31 @@ def dynamic(muLC,muRC,amp):
 	    m=muRC+amp*math.sin(omega*t)
 	    return m
 	
-	def fLinU(t):
-	    f=1/(1+np.exp((Eu-muL(t))/T))
-	    return f
-	
-	def fLoutU(t):
-	    f=1-1/(1+np.exp((Eu-muL(t))/T))
-	    return f
-	
-	def fRinU(t):
-	    f=1/(1+np.exp((Eu-muR(t))/T))
-	    return f
-	
-	def fRoutU(t):
-	    f=1-1/(1+np.exp((Eu-muR(t))/T))
-	    return f
-	
-	def fLinD(t):
-	    f=1/(1+np.exp((Ed-muL(t))/T))
-	    return f
-	
-	def fLoutD(t):
-	    f=1-1/(1+np.exp((Ed-muL(t))/T))
-	    return f
-	
-	def fRinD(t):
-	    f=1/(1+np.exp((Ed-muR(t))/T))
-	    return f
-	
-	def fRoutD(t):
-	    f=1-1/(1+np.exp((Ed-muR(t))/T))
-	    return f
-	
-	    
+	def f(t,spin, electrode,direction):
+		if spin == "up":
+			E = Eu
+		else: E = Ed
+		if electrode == "L":
+			mu = muL(t)
+		else: mu = muR(t)
+		if direction == "in":
+			sign = 1
+		else: sign = -1
+		return 1.0/(1.0+np.exp(sign*(E-mu)/T))
+		    
 	def Hamilt(t,chip,chim):
 	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
 	
 	
-	    Wp0L=wL*(fLinU(t)*a**2+fLinD(t)*b**2)
-	    Wp0R=wR*(fRinU(t)*a**2+fRinD(t)*b**2)
-	    Wm0L=wL*(fLinU(t)*b**2+fLinD(t)*a**2)
-	    Wm0R=wR*(fRinU(t)*b**2+fRinD(t)*a**2)
+	    Wp0L=wL*(f(t,"up","L","in"))
+	    Wp0R=wR*(f(t,"up","R","in"))
+	    Wm0L=wL*(f(t,"dn","L","in"))
+	    Wm0R=wR*(f(t,"dn","R","in"))
 	    
-	    W0pL=wL*(fLoutU(t)*a**2+fLoutD(t)*b**2)
-	    W0pR=wR*(fRoutU(t)*a**2+fRoutD(t)*b**2)
-	    W0mL=wL*(fLoutU(t)*b**2+fLoutD(t)*a**2)
-	    W0mR=wR*(fRoutU(t)*b**2+fRoutD(t)*a**2)
+	    W0pL=wL*(f(t,"up","L","out"))
+	    W0pR=wR*(f(t,"up","R","out"))
+	    W0mL=wL*(f(t,"dn","L","out"))
+	    W0mR=wR*(f(t,"dn","R","out"))
 	   
 	    W0p=W0pL+W0pR
 	    W0m=W0mL+W0mR
@@ -465,58 +444,6 @@ def dynamic(muLC,muRC,amp):
 	    CU=-CU
 	    CD=-CD
 	    return [CU,CD]
-	
-
-	    
-	def steady(t):
-	    Wp0L=wL*(fLinU(t)*a**2+fLinD(t)*b**2)
-	    Wp0R=wR*(fRinU(t)*a**2+fRinD(t)*b**2)
-	    Wm0L=wL*(fLinU(t)*b**2+fLinD(t)*a**2)
-	    Wm0R=wR*(fRinU(t)*b**2+fRinD(t)*a**2)
-	    
-	    W0pL=wL*(fLoutU(t)*a**2+fLoutD(t)*b**2)
-	    W0pR=wR*(fRoutU(t)*a**2+fRoutD(t)*b**2)
-	    W0mL=wL*(fLoutU(t)*b**2+fLoutD(t)*a**2)
-	    W0mR=wR*(fRoutU(t)*b**2+fRoutD(t)*a**2)
-	   
-	    W0p=W0pL+W0pR
-	    W0m=W0mL+W0mR
-	    Wp0=Wp0L+Wp0R
-	    Wm0=Wm0L+Wm0R
-	    
-	    eta=W0p*W0m+Wp0*W0m+W0p*Wm0
-	    rho0=W0p*W0m/eta
-	    rhop=Wp0*W0m/eta
-	    rhom=W0p*Wm0/eta
-	    
-	    up=W0pR*rhop-Wp0R*rho0
-	    dw=W0mR*rhom-Wm0R*rho0
-	    return [up,dw]			
-	
-	#print('%8.2e' % currentp(),'%8.2e' % currentm())
-	def check():
-		N=10
-		tt=np.zeros(N)
-		eigU=np.zeros(N)
-		eigD=np.zeros(N)
-		styU=np.zeros(N)
-		styD=np.zeros(N)		
-		for i in range(N):
-			tt[i]=Tp/N*i
-#			print("t=",tt[i],":up:","eigen=",eig0chip(tt[i]),"steady=",steady(tt[i])[0])
-#			print("t=",tt[i],":down:","eigen=",eig0chim(tt[i]),"steady=",steady(tt[i])[1])
-			eigU[i]=eig0chip(tt[i]).real
-			styU[i]=steady(tt[i])[0]
-			eigD[i]=eig0chim(tt[i]).real
-			styD[i]=steady(tt[i])[1]
-		plt.plot(tt,eigU,"-")
-		plt.plot(tt,styU,"<")
-		plt.plot(tt,eigD,"r-")
-		plt.plot(tt,styD,"r<")
-		plt.show()
-		return
-#	check()
-		
 	return Idyn()
 	
 ######################################################
@@ -1078,7 +1005,9 @@ def geometricplot():
 #print(geometric(muL,muR,0e-3))
 
 
-geometric(0,0,0)
+#geometric(0,0,0)
+print(dynamic(0.01,0,0)[0]*1.0e-8)
+
 
 #contour1()
 

@@ -195,6 +195,5 @@ def diamond():
 
  return
 
-#centerchange1(0,muR)	
 diamond()
 print("time:", (time.time() - start_time)/60.0)

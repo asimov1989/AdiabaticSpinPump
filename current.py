@@ -41,215 +41,113 @@ wR=1e10 # tunneling rate
 
 
 def geometric(muLC,muRC,amp):
-	def fLinU(muL,muR):
-	    f=1.0/(1.0+np.exp((Eu-muL)/T))
-	    return f
-	
-	def fLoutU(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Eu-muL)/T))
-	    return f
-	
-	def fRinU(muL,muR):
-	    f=1.0/(1.0+np.exp((Eu-muR)/T))
-	    return f
-	
-	def fRoutU(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Eu-muR)/T))
-	    return f
-	
-	def fLinD(muL,muR):
-	    f=1.0/(1.0+np.exp((Ed-muL)/T))
-	    return f
-	
-	def fLoutD(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Ed-muL)/T))
-	    return f
-	
-	def fRinD(muL,muR):
-	    f=1.0/(1.0+np.exp((Ed-muR)/T))
-	    return f
-	
-	def fRoutD(muL,muR):
-	    f=1.0/(1.0+np.exp(-(Ed-muR)/T))
-	    return f
+	def f(muL,muR,spin, electrode,direction):
+		if spin == "up":
+			E = Eu
+		else: E = Ed
+		if electrode == "L":
+			mu = muL
+		else: mu = muR
+		if direction == "in":
+			sign = 1
+		else: sign = -1
+		return 1.0/(1.0+np.exp(sign*(E-mu)/T))
+
+
 	
 	    
 	def Hamilt(muL,muR,chip,chim):
-	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
-	
-	
+		H=np.zeros((3,3),dtype=np.dtype(np.complex128))
+		Wp0L=wL*(f(muL,muR,"up", "L", "in"))
+		Wp0R=wR*(f(muL,muR,"up", "R", "in"))
+		Wm0L=wL*(f(muL,muR,"dn","L","in"))
+		Wm0R=wR*(f(muL,muR,"dn","R","in"))
+		
+		W0pL=wL*(f(muL,muR,"up","L","out"))
+		W0pR=wR*(f(muL,muR,"up","R","out"))
+		W0mL=wL*(f(muL,muR,"dn","L","out"))
+		W0mR=wR*(f(muL,muR,"dn","R","out"))
+		
+		W0p=W0pL+W0pR
+		W0m=W0mL+W0mR
+		Wp0=Wp0L+Wp0R
+		Wm0=Wm0L+Wm0R
+		e_chip=np.exp(1j*chip)
+		e_chip2=np.exp(-1j*chip)
+		e_chim=np.exp(1j*chim)
+		e_chim2=np.exp(-1j*chim)
+		
+		
+		
+		H[0,0]= -Wp0-Wm0
+		H[0,1]=W0pL+W0pR*e_chip
+		H[0,2]=W0mL+W0mR*e_chim
+		H[1,0]=Wp0L+Wp0R*e_chip2
+		H[1,1]= -W0p
+		H[1,2]=0
+		H[2,0]=Wm0L+Wm0R*e_chim2
+		H[2,1]=0
+		H[2,2]= -W0m
+		H=-H
+		
+		return H
 
-	
-	    Wp0L=wL*(fLinU(muL,muR))
-	    Wp0R=wR*(fRinU(muL,muR))
-	    Wm0L=wL*(fLinD(muL,muR))
-	    Wm0R=wR*(fRinD(muL,muR))
+	def fdiff(muL,muR,spin, electrode,direction):
+		if spin == "up":
+			E = Eu
+		else: E = Ed
+		if electrode == "L":
+			mu = muL
+		else: mu = muR
+		if direction == "in":
+			sign = 1
+		else: sign = -1
+		
+		a=np.exp((E-mu)/T)
+		return sign*1.0/(1.0/a+2+a)/T
 	    
-	    W0pL=wL*(fLoutU(muL,muR))
-	    W0pR=wR*(fRoutU(muL,muR))
-	    W0mL=wL*(fLoutD(muL,muR))
-	    W0mR=wR*(fRoutD(muL,muR))
-	   
-	    W0p=W0pL+W0pR
-	    W0m=W0mL+W0mR
-	    Wp0=Wp0L+Wp0R
-	    Wm0=Wm0L+Wm0R
-	    e_chip=np.exp(1j*chip)
-	    e_chip2=np.exp(-1j*chip)
-	    e_chim=np.exp(1j*chim)
-	    e_chim2=np.exp(-1j*chim)
 
-
-
-	    H[0,0]= -Wp0-Wm0
-	    H[0,1]=W0pL+W0pR*e_chip
-	    H[0,2]=W0mL+W0mR*e_chim
-	    H[1,0]=Wp0L+Wp0R*e_chip2
-	    H[1,1]= -W0p
-	    H[1,2]=0
-	    H[2,0]=Wm0L+Wm0R*e_chim2
-	    H[2,1]=0
-	    H[2,2]= -W0m
-	    H=-H
-	    
-	    return H
-	    
-	def fLinUdiff(muL,muR):
-	    a=np.exp((Eu-muL)/T)
-#	    f=a/(1.0+a)**2.0/T
-	    f=1.0/(1.0/a+2+a)/T
-	    return f
-	
-	def fLoutUdiff(muL,muR):
-	    a=np.exp((Eu-muL)/T)
-#	    f=-a/(1.0+a)**2.0/T
-	    f=-1.0/(1.0/a+2+a)/T
-	    return f
-	
-	def fRinUdiff(muL,muR):
-	    a=np.exp((Eu-muR)/T)
-#	    f=a/(1.0+a)**2.0/T
-	    f=1.0/(1.0/a+2+a)/T
-	    return f
-	
-	def fRoutUdiff(muL,muR):
-	    a=np.exp((Eu-muR)/T)
-#	    f=-a/(1.0+a)**2.0/T
-	    f=-1.0/(1.0/a+2+a)/T
-	    return f
-	
-	def fLinDdiff(muL,muR):
-	    a=np.exp((Ed-muL)/T)
-#	    f=a/(1.0+a)**2.0/T
-	    f=1.0/(1.0/a+2+a)/T
-	    return f
-	
-	def fLoutDdiff(muL,muR):
-	    a=np.exp((Ed-muL)/T)
-#	    f=-a/(1.0+a)**2.0/T
-	    f=-1.0/(1.0/a+2+a)/T
-	    return f
-	
-	def fRinDdiff(muL,muR):
-	    a=np.exp((Ed-muR)/T)
-#	    f=a/(1.0+a)**2.0/T
-	    f=1.0/(1.0/a+2+a)/T
-	    return f
-	
-	def fRoutDdiff(muL,muR):
-	    a=np.exp((Ed-muR)/T)
-#	    f=-a/(1.0+a)**2.0/T
-	    f=-1.0/(1.0/a+2+a)/T
-	    return f
-	
-	    
-	def HdiffL(muL,muR,chip,chim):
-	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
-	
-
-	
-	    Wp0L=wL*(fLinUdiff(muL,muR))
-	    Wp0R=0
-	    Wm0L=wL*(fLinDdiff(muL,muR))
-	    Wm0R=0
-	    
-	    W0pL=wL*(fLoutUdiff(muL,muR))
-	    W0pR=0
-	    W0mL=wL*(fLoutDdiff(muL,muR))
-	    W0mR=0
-	   
-	    W0p=W0pL+W0pR
-	    W0m=W0mL+W0mR
-	    Wp0=Wp0L+Wp0R
-	    Wm0=Wm0L+Wm0R
-	    e_chip=np.exp(1j*chip)
-	    e_chip2=np.exp(-1j*chip)
-	    e_chim=np.exp(1j*chim)
-	    e_chim2=np.exp(-1j*chim)
+	def Hdiff(muL,muR,chip,chim,electrode):
+		H=np.zeros((3,3),dtype=np.dtype(np.complex128))
+		if electrode == "L":
+			a = 1.0
+		else: a = 0.0
+		
+		Wp0L=a*wL*(fdiff(muL,muR,"up","L","in"))
+		Wp0R=(1.0-a)*wR*fdiff(muL,muR,"up","R","in")
+		Wm0L=a*wL*(fdiff(muL,muR,"dn","L","in"))
+		Wm0R=(1.0-a)*wR*fdiff(muL,muR,"dn","R","in")
+		
+		W0pL=a*wL*(fdiff(muL,muR,"up","L","out"))
+		W0pR=(1.0-a)*wR*fdiff(muL,muR,"up","R","out")
+		W0mL=a*wL*(fdiff(muL,muR,"dn","L","out"))
+		W0mR=(1.0-a)*wR*fdiff(muL,muR,"dn","R","out")
+		
+		W0p=W0pL+W0pR
+		W0m=W0mL+W0mR
+		Wp0=Wp0L+Wp0R
+		Wm0=Wm0L+Wm0R
+		e_chip=np.exp(1j*chip)
+		e_chip2=np.exp(-1j*chip)
+		e_chim=np.exp(1j*chim)
+		e_chim2=np.exp(-1j*chim)
 	#    e_chi=1.0+1j*chi
 	#    e_chi2=1.0-1j*chi
-	    H[0,0]= -Wp0-Wm0
-	    H[0,1]=W0pL+W0pR*e_chip
-	    H[0,2]=W0mL+W0mR*e_chim
-	    H[1,0]=Wp0L+Wp0R*e_chip2
-	    H[1,1]= -W0p
-	    H[1,2]=0
-	    H[2,0]=Wm0L+Wm0R*e_chim2
-	    H[2,1]=0
-	    H[2,2]= -W0m
-	    H=-H
-	    return H
+		H[0,0]= -Wp0-Wm0
+		H[0,1]=W0pL+W0pR*e_chip
+		H[0,2]=W0mL+W0mR*e_chim
+		H[1,0]=Wp0L+Wp0R*e_chip2
+		H[1,1]= -W0p
+		H[1,2]=0
+		H[2,0]=Wm0L+Wm0R*e_chim2
+		H[2,1]=0
+		H[2,2]= -W0m
+		H=-H
+		return H
+
 	
-	def HdiffR(muL,muR,chip,chim):
-	    H=np.zeros((3,3),dtype=np.dtype(np.complex128))
-	
-	
-	    Wp0L=0
-	    Wp0R=wR*(fRinUdiff(muL,muR))
-	    Wp0Ru=wR*(fRinUdiff(muL,muR))
-	    Wp0Rd=0
-	    Wm0L=0
-	    Wm0R=wR*(fRinDdiff(muL,muR))
-	    Wm0Ru=0
-	    Wm0Rd=wR*(fRinDdiff(muL,muR))
-	    
-	    W0pL=0
-	    W0pR=wR*(fRoutUdiff(muL,muR))
-	    W0pRu=wR*(fRoutUdiff(muL,muR))
-	    W0pRd=0
-	    W0mL=0
-	    W0mR=wR*(fRoutDdiff(muL,muR))
-	    W0mRu=0
-	    W0mRd=wR*(fRoutDdiff(muL,muR))
-	   
-	    W0p=W0pL+W0pR
-	    W0m=W0mL+W0mR
-	    Wp0=Wp0L+Wp0R
-	    Wm0=Wm0L+Wm0R
-	    e_chip=np.exp(1j*chip)
-	    e_chip2=np.exp(-1j*chip)
-	    e_chim=np.exp(1j*chim)
-	    e_chim2=np.exp(-1j*chim)
-	#    e_chi=1.0+1j*chi
-	#    e_chi2=1.0-1j*chi
-	    H[0,0]= -Wp0-Wm0
-	    H[0,1]=W0pL+W0pRu*e_chip+W0pRd*e_chim
-	    H[0,2]=W0mL+W0mRu*e_chip+W0mRd*e_chim
-	    H[1,0]=Wp0L+Wp0Ru*e_chip2+Wp0Rd*e_chim2
-	    H[1,1]= -W0p
-	    H[1,2]=0
-	    H[2,0]=Wm0L+Wm0Ru*e_chip2+Wm0Rd*e_chim2
-	    H[2,1]=0
-	    H[2,2]= -W0m
-	    H=-H
-	    return H
-	
+
 	def F(muL,muR,chip,chim):
-	#    H=Hamilt(t,chi)
-	#    Hdagger=np.conj(H.transpose())
-	#    print(H)
-	#    print(Hdagger)
-	
 	    H=Hamilt(muL,muR,chip,chim)
 	    A=eigscipy(H,left=True)
 	    imin=A[0].argsort()[0]
@@ -283,26 +181,26 @@ def geometric(muLC,muRC,amp):
 	#    print('left from scipy',eigscipy(H1L,left=True))
 	#    print('right',LA.eig(H1L)[1].transpose()[0])
 	    
-	    a=np.matmul(phi0L,HdiffL(muL,muR,chip,chim))
+	    a=np.matmul(phi0L,Hdiff(muL,muR,chip,chim,"L"))
 	    b1L=np.matmul(a,phi1R)
-	    a=np.matmul(phi1L,HdiffR(muL,muR,chip,chim))
+	    a=np.matmul(phi1L,Hdiff(muL,muR,chip,chim,"R"))
 	    c1L=np.matmul(a,phi0R)
 	    
-	    a=np.matmul(phi0L,HdiffR(muL,muR,chip,chim))
+	    a=np.matmul(phi0L,Hdiff(muL,muR,chip,chim,"R"))
 	    b1R=np.matmul(a,phi1R)
-	    a=np.matmul(phi1L,HdiffL(muL,muR,chip,chim))
+	    a=np.matmul(phi1L,Hdiff(muL,muR,chip,chim,"L"))
 	    c1R=np.matmul(a,phi0R)
 	    
 	    element1=(b1L*c1L-b1R*c1R)/((eig0-eig1))**2.0
 	    
-	    a=np.matmul(phi0L,HdiffL(muL,muR,chip,chim))
+	    a=np.matmul(phi0L,Hdiff(muL,muR,chip,chim,"L"))
 	    b2L=np.matmul(a,phi2R)
-	    a=np.matmul(phi2L,HdiffR(muL,muR,chip,chim))
+	    a=np.matmul(phi2L,Hdiff(muL,muR,chip,chim,"R"))
 	    c2L=np.matmul(a,phi0R)
 	    
-	    a=np.matmul(phi0L,HdiffR(muL,muR,chip,chim))
+	    a=np.matmul(phi0L,Hdiff(muL,muR,chip,chim,"R"))
 	    b2R=np.matmul(a,phi2R)
-	    a=np.matmul(phi2L,HdiffL(muL,muR,chip,chim))
+	    a=np.matmul(phi2L,Hdiff(muL,muR,chip,chim,"L"))
 	    c2R=np.matmul(a,phi0R)
 	    
 	    element2=(b2L*c2L-b2R*c2R)/((eig0-eig2))**2.0
@@ -310,36 +208,12 @@ def geometric(muLC,muRC,amp):
 	    intg=element1+element2
 	    return intg
 	
-	def BerryCurvature(muL,muR):
-
-#	    temp1=F(muL,muR,dchi/2,0)
-#	    temp2=F(muL,muR,0,dchi/2)
-#
-#	    
-#	    BC_U=2*(temp1.imag)/(dchi)
-#	    BC_D=2*(temp2.imag)/(dchi)
-	    
+	def BerryCurvature(muL,muR): 
 	    temp1=8.0*F(muL,muR,dchi/2.0,0)-F(muL,muR,dchi,0)
 	    temp2=8.0*F(muL,muR,0,dchi/2.0)-F(muL,muR,0,dchi)
 	    BC_U=(temp1.imag)/(3.0*dchi)
 	    BC_D=(temp2.imag)/(3.0*dchi)
-
-#	    temp1=8*F(muL,muR,dchi/2,0)-8*F(muL,muR,-dchi/2,0)-F(muL,muR,dchi,0)+F(muL,muR,-dchi,0)
-#	    temp2=8*F(muL,muR,0,dchi/2)-8*F(muL,muR,0,-dchi/2)-F(muL,muR,0,dchi)+F(muL,muR,0,-dchi)
-
-	    
-#	    BC_U=(temp1.imag)/(6*dchi)
-#	    BC_D=(temp2.imag)/(6*dchi)
-
-
 	    return [BC_U,BC_D]
-	
-
-#	print(BerryCurvature(Eu,Ed))	
-#	print(BerryCurvature(Ed,Eu))
-#	print(BerryCurvature(Eu,Eu))	
-#	print(BerryCurvature(Ed,Ed))	
-
 	
 	def current():
 	    Current_U=0.0
@@ -375,26 +249,13 @@ def geometric(muLC,muRC,amp):
 				H=Hamilt(muL,muR,chip,chim)
 				A=eigscipy(H,left=True)
 				imin=A[0].argsort()[0]
-				#imed=A[0].argsort()[1]
-				#imax=A[0].argsort()[2]
 				eig0=A[0][imin]
-				#eig1=A[0][imed]
-				#eig2=A[0][imax]
-				#print(eig2)
 				phi0R=A[2].transpose()[imin]
 				phi0L=A[1].transpose()[imin]
-				#phi1R=A[2].transpose()[imed]
-				#phi1L=A[1].transpose()[imed]
-				#phi2R=A[2].transpose()[imax]
-				#phi2L=A[1].transpose()[imax]
-				
+	
 				phi0L=np.conj(phi0L)
-				#phi1L=np.conj(phi1L)
-				#phi2L=np.conj(phi2L)
-				
+		
 				phi0L=phi0L/np.matmul(phi0L,phi0R)
-				#phi1L=phi1L/np.matmul(phi1L,phi1R)
-				#phi2L=phi2L/np.matmul(phi2L,phi2R)
 				
 				phiL[i,:]=phi0L
 				phiR[i,:]=phi0R		
@@ -416,27 +277,11 @@ def geometric(muLC,muRC,amp):
 				H=Hamilt(muL,muR,chip,chim)
 				A=eigscipy(H,left=True)
 				imin=A[0].argsort()[0]
-				#imed=A[0].argsort()[1]
-				#imax=A[0].argsort()[2]
 				eig0=A[0][imin]
-				#eig1=A[0][imed]
-				#eig2=A[0][imax]
-				#print(eig2)
 				phi0R=A[2].transpose()[imin]
 				phi0L=A[1].transpose()[imin]
-				#phi1R=A[2].transpose()[imed]
-				#phi1L=A[1].transpose()[imed]
-				#phi2R=A[2].transpose()[imax]
-				#phi2L=A[1].transpose()[imax]
-				
 				phi0L=np.conj(phi0L)
-				#phi1L=np.conj(phi1L)
-				#phi2L=np.conj(phi2L)
-				
 				phi0L=phi0L/np.matmul(phi0L,phi0R)
-				#phi1L=phi1L/np.matmul(phi1L,phi1R)
-				#phi2L=phi2L/np.matmul(phi2L,phi2R)
-				
 				phiL[i,:]=phi0L
 				phiR[i,:]=phi0R		
 		
@@ -468,11 +313,6 @@ def geometric(muLC,muRC,amp):
 	    for i in range(Ngrid):
 	        for j in range(Ngrid):
 	            temp=BerryCurvature(X[0][i],Y[j][0])
-#	            BC_C[i,j]=(temp[0]+temp[1])
-#	            BC_S[i,j]=(temp[0]-temp[1])
-#	            BC_U[i,j]=(temp[0])
-#	            BC_D[i,j]=(temp[1])
-
 ##### attention, the order of index
 
 	            BC_C[j,i]=(temp[0]+temp[1])
@@ -486,21 +326,6 @@ def geometric(muLC,muRC,amp):
 
 	    fig=plt.figure()
 
-#	    p1=fig.add_subplot(221)
-#	    cp = p1.contourf(X, Y, BC_C,128)
-#	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-#	    plt.title('(a) Charge')
-#	    plt.xlabel('$\mu_L$ (eV)')
-#	    plt.ylabel('$\mu_R$ (eV)')
-#	    plt.gca().set_aspect('equal', adjustable='box')
-#	    
-#	    p2=fig.add_subplot(222)
-#	    cp = p2.contourf(X, Y, BC_S,128)
-#	    plt.colorbar(cp,format=ticker.FuncFormatter(fmt))
-#	    plt.title('(b) Spin')
-#	    plt.xlabel('$\mu_L$ (eV)')
-#	    plt.ylabel('$\mu_R$ (eV)')
-#	    plt.gca().set_aspect('equal', adjustable='box')
 
 	    p3=fig.add_subplot(121)
 	    cp = p3.contourf(X*1e3, Y*1e3, BC_U,16)
@@ -536,9 +361,6 @@ def geometric(muLC,muRC,amp):
 #=====================================================
 
 def dynamic(muLC,muRC,amp):
-#	muLC=8.5e-3
-#	muRC=8e-3
-#	amp=8e-3
 	def muL(t):
 	    m=muLC+amp*math.cos(omega*t)
 	    return m
@@ -1280,9 +1102,3 @@ print("time:", (time.time() - start_time)/60.0)
 #plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 #plt.show()
 
-
-######################################################
-######################################################
-######################################################
-
-# delta/temperature
